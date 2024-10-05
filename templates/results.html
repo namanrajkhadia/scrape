@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results - Amazon Brand Presence Checker</title>
+</head>
+<body>
+    <h1>Results for {{ brand_name }}</h1>
+    {% for result in results %}
+        <h2>Keyword: {{ result.keyword }}</h2>
+        {% if result.sponsored_positions is none %}
+            <p>Failed to fetch results</p>
+        {% else %}
+            <h3>Sponsored Results:</h3>
+            {% if result.sponsored_positions %}
+                <p>{{ brand_name }} products found in the following sponsored positions:</p>
+                <ul>
+                {% for position, title in result.sponsored_positions %}
+                    <li>Position {{ position }}: {{ title }}</li>
+                {% endfor %}
+                </ul>
+            {% else %}
+                <p>No {{ brand_name }} products found in the first 10 sponsored results</p>
+            {% endif %}
+
+            <h3>Organic Results:</h3>
+            {% if result.organic_present %}
+                <p>{{ brand_name }} product found in organic results on the first page</p>
+            {% else %}
+                <p>No {{ brand_name }} product found in organic results on the first page</p>
+            {% endif %}
+        {% endif %}
+    {% endfor %}
+    <a href="/">Back to Search</a>
+</body>
+</html>
