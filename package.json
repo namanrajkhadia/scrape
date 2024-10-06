@@ -8,14 +8,14 @@
     "start": "next start",
     "lint": "next lint"
   },
-  "dependencies": {
-    "next": "^13.0.0",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "@chakra-ui/react": "^1.6.7",
-    "@emotion/react": "^11.4.1",
-    "@emotion/styled": "^11.3.0",
-    "framer-motion": "^4.1.17"
+ "dependencies": {
+  "next": "^13.5.7", // or the latest version
+  "react": "^18.2.0", // update to React 18
+  "react-dom": "^18.2.0", // update to React DOM 18
+  "@chakra-ui/react": "^1.6.7",
+  "@emotion/react": "^11.4.1",
+  "@emotion/styled": "^11.3.0",
+  "framer-motion": "^4.1.17"
   },
   "engines": {
     "node": ">=18.18.0 <19.0.0"
