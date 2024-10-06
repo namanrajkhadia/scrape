@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import axios from 'axios';
-import * as cheerio from 'cheerio';
+import fetch from 'node-fetch';
+import { JSDOM } from 'jsdom';
 import ExcelJS from 'exceljs';
 
 async function checkBrandPresence(keyword: string, brand: string, marketplace = "in") {
@@ -10,19 +10,22 @@ async function checkBrandPresence(keyword: string, brand: string, marketplace = 
     };
 
     try {
-        const response = await axios.get(url, { headers });
-        const $ = cheerio.load(response.data);
-        const allResults = $('div[data-component-type="s-search-result"]');
+        const response = await fetch(url, { headers });
+        const html = await response.text();
+        const dom = new JSDOM(html);
+        const document = dom.window.document;
+
+        const allResults = document.querySelectorAll('div[data-component-type="s-search-result"]');
 
         let sponsoredPresent = false;
         let organicPresent = false;
 
-        allResults.each((_, element) => {
-            const titleElement = $(element).find('span.a-text-normal');
-            if (titleElement.length === 0) return;
+        allResults.forEach((result) => {
+            const titleElement = result.querySelector('span.a-text-normal');
+            if (!titleElement) return;
 
-            const title = titleElement.text().toLowerCase();
-            const isSponsored = $(element).find('span:contains("Sponsored")').length > 0;
+            const title = titleElement.textContent?.toLowerCase() || '';
+            const isSponsored = result.querySelector('span:not([data-component-type]):not([class]):not([id])') !== null;
 
             if (title.includes(brand.toLowerCase())) {
                 if (isSponsored) {
@@ -32,7 +35,7 @@ async function checkBrandPresence(keyword: string, brand: string, marketplace = 
                 }
             }
 
-            if (sponsoredPresent && organicPresent) return false;
+            if (sponsoredPresent && organicPresent) return;
         });
 
         return { sponsoredPresent, organicPresent };
