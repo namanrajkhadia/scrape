@@ -10,10 +10,17 @@ interface BrandFormProps {
   keywords: string;
   setKeywords: (keywords: string) => void;
   isGenerating: boolean;
-  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void; // Add this line
+  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
 }
 
-const BrandForm = ({ brandName, setBrandName, keywords, setKeywords, isGenerating, handleSubmit }: BrandFormProps) => ( // Pass handleSubmit
+const BrandForm: React.FC<BrandFormProps> = ({
+  brandName,
+  setBrandName,
+  keywords,
+  setKeywords,
+  isGenerating,
+  handleSubmit,
+}) => (
   <form onSubmit={handleSubmit}>
     <VStack spacing={4}>
       <Box w="100%">
@@ -48,7 +55,7 @@ const BrandForm = ({ brandName, setBrandName, keywords, setKeywords, isGeneratin
   </form>
 );
 
-export default function BrandRankChecker() {
+const BrandRankChecker: React.FC = () => {
   const [brandName, setBrandName] = useState<string>('');
   const [keywords, setKeywords] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
@@ -102,9 +109,11 @@ export default function BrandRankChecker() {
           keywords={keywords}
           setKeywords={setKeywords}
           isGenerating={isGenerating}
-          handleSubmit={handleSubmit} // Pass the handleSubmit function
+          handleSubmit={handleSubmit}
         />
       </Box>
     </Flex>
   );
-}
+};
+
+export default BrandRankChecker;
