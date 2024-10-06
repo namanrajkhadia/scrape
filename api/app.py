@@ -93,4 +93,5 @@ def check_brand():
     return send_file(excel_file, as_attachment=True, attachment_filename=f"amazon_search_results_{brand_name}.xlsx")
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
