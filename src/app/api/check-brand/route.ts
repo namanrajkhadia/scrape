@@ -15,7 +15,7 @@ async function checkBrandPresence(keyword: string, brand: string, marketplace = 
         const dom = new JSDOM(html);
         const document = dom.window.document;
 
-        const allResults = document.querySelectorAll('div[data-component-type="s-search-result"]');
+        const allResults = Array.from(document.querySelectorAll('div[data-component-type="s-search-result"]'));
         let sponsoredPresent = false;
         let organicPresent = false;
 
@@ -26,7 +26,7 @@ async function checkBrandPresence(keyword: string, brand: string, marketplace = 
             const title = titleElement.textContent || '';
             const isSponsored = result.querySelector('span:not([data-component-type]):not([class]):not([id])') !== null;
 
-            if (brand.toLowerCase() in title.toLowerCase()) {
+            if (title.toLowerCase().includes(brand.toLowerCase())) {
                 if (isSponsored) {
                     sponsoredPresent = true;
                 } else {
