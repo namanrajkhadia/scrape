@@ -4,7 +4,7 @@ import { JSDOM } from 'jsdom';
 import ExcelJS from 'exceljs';
 
 async function checkBrandPresence(keyword: string, brand: string, marketplace = "in") {
-    const url = `https://www.amazon.${marketplace}/s?k=${encodeURIComponent(keyword)}`;
+    const url = `https://www.amazon.${marketplace}/s?k=${encodeURIComponent(keyword.replace(' ', '+'))}`;
     const headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     };
@@ -16,36 +16,31 @@ async function checkBrandPresence(keyword: string, brand: string, marketplace = 
         const document = dom.window.document;
 
         const allResults = document.querySelectorAll('div[data-component-type="s-search-result"]');
-
         let sponsoredPresent = false;
         let organicPresent = false;
-        let sponsoredCount = 0;
 
-        for (let i = 0; i < allResults.length; i++) {
-            const result = allResults[i];
+        for (const result of allResults) {
             const titleElement = result.querySelector('span.a-text-normal');
             if (!titleElement) continue;
 
-            const title = titleElement.textContent?.toLowerCase() || '';
-            const isSponsored = result.querySelector('span:-webkit-any(span[data-component-type="s-sponsored-label-info-icon"], .puis-label-text)') !== null;
+            const title = titleElement.textContent || '';
+            const isSponsored = result.querySelector('span:not([data-component-type]):not([class]):not([id])') !== null;
 
-            if (title.includes(brand.toLowerCase())) {
-                if (isSponsored && sponsoredCount < 10) {
+            if (brand.toLowerCase() in title.toLowerCase()) {
+                if (isSponsored) {
                     sponsoredPresent = true;
-                    sponsoredCount++;
-                } else if (!isSponsored) {
+                } else {
                     organicPresent = true;
                 }
             }
 
             if (sponsoredPresent && organicPresent) break;
-            if (!isSponsored && i >= 20) break; // Assuming 20 results per page
         }
 
-        return { sponsoredPresent, organicPresent };
+        return [sponsoredPresent, organicPresent];
     } catch (error) {
-        console.error('Error fetching results:', error);
-        return { sponsoredPresent: null, organicPresent: null };
+        console.error(`Error fetching results: ${error}`);
+        return [null, null];
     }
 }
 
@@ -74,8 +69,8 @@ async function createExcelFile(results: any[], brandName: string) {
             result.organicPresent ? 'Present' : 'Not Present'
         ]);
 
-        if (row.getCell(2).fill) row.getCell(2).fill = result.sponsoredPresent ? greenFill : redFill;
-        if (row.getCell(3).fill) row.getCell(3).fill = result.organicPresent ? greenFill : redFill;
+        row.getCell(2).fill = result.sponsoredPresent ? greenFill : redFill;
+        row.getCell(3).fill = result.organicPresent ? greenFill : redFill;
     });
 
     const buffer = await workbook.xlsx.writeBuffer();
@@ -87,23 +82,21 @@ export async function POST(request: Request) {
         const data = await request.json();
         const brandName = data.brand_name;
         const keywords = data.keywords;
+        const results = [];
 
-        const results = await Promise.all(
-            keywords.map(async (keyword: string) => {
-                const trimmedKeyword = keyword.trim();
-                if (trimmedKeyword) {
-                    const { sponsoredPresent, organicPresent } = await checkBrandPresence(trimmedKeyword, brandName);
-                    return {
-                        keyword: trimmedKeyword,
-                        sponsoredPresent,
-                        organicPresent
-                    };
-                }
-            })
-        );
+        for (const keyword of keywords) {
+            const trimmedKeyword = keyword.trim();
+            if (trimmedKeyword) {
+                const [sponsoredPresent, organicPresent] = await checkBrandPresence(trimmedKeyword, brandName);
+                results.push({
+                    keyword: trimmedKeyword,
+                    sponsoredPresent,
+                    organicPresent
+                });
+            }
+        }
 
-        const filteredResults = results.filter(result => result !== undefined);
-        const excelBuffer = await createExcelFile(filteredResults, brandName);
+        const excelBuffer = await createExcelFile(results, brandName);
 
         return new NextResponse(excelBuffer, {
             status: 200,
