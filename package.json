@@ -6,8 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "backend": "python api/app.py"
+    "lint": "next lint"
   },
   "dependencies": {
     "@chakra-ui/react": "^2.3.0",
@@ -16,11 +15,10 @@
     "framer-motion": "^6.5.1",
     "next": "^13.0.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
-  "node-fetch": "^3.2.0",
-  "jsdom": "^19.0.0",
-  "exceljs": "^4.3.0"
-}
+    "react-dom": "^18.2.0",
+    "node-fetch": "^3.2.0",
+    "jsdom": "^19.0.0",
+    "exceljs": "^4.3.0"
   },
   "devDependencies": {
     "@types/node": "^18.7.13",
