@@ -3,7 +3,16 @@
 import { useState } from 'react';
 import { Button, Input, Textarea, Flex, Box, Heading, Text, VStack } from '@chakra-ui/react';
 
-const BrandForm = ({ brandName, setBrandName, keywords, setKeywords, isGenerating }) => (
+// Define the type for props
+interface BrandFormProps {
+  brandName: string;
+  setBrandName: (name: string) => void;
+  keywords: string;
+  setKeywords: (keywords: string) => void;
+  isGenerating: boolean;
+}
+
+const BrandForm = ({ brandName, setBrandName, keywords, setKeywords, isGenerating }: BrandFormProps) => (
   <form onSubmit={handleSubmit}>
     <VStack spacing={4}>
       <Box w="100%">
