@@ -1,3 +1,5 @@
+'use client'; // Add this line to indicate it's a Client Component
+
 import { useState } from 'react';
 import { Button, Input, Textarea, Flex, Box, Heading, Text, VStack } from '@chakra-ui/react';
 
