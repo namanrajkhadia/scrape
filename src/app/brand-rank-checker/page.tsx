@@ -1,31 +1,61 @@
-'use client'
-
-import { useState } from 'react'
-import { 
-  Button, 
-  Input, 
-  Textarea, 
-  Flex, 
-  Box, 
-  Heading, 
-  Text, 
-  Link as ChakraLink,
-  VStack
-} from '@chakra-ui/react'
-import Link from 'next/link'
+import { useState } from 'react';
+import { Button, Input, Textarea, Flex, Box, Heading, Text, Link as ChakraLink, VStack, useToast } from '@chakra-ui/react';
+import Link from 'next/link';
 
 export default function BrandRankChecker() {
-  const [brandName, setBrandName] = useState('')
-  const [keywords, setKeywords] = useState('')
-  const [isGenerating, setIsGenerating] = useState(false)
+  const [brandName, setBrandName] = useState('');
+  const [keywords, setKeywords] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const toast = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsGenerating(true)
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    setIsGenerating(false)
-    alert('Report generated! (This is a placeholder)')
-  }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsGenerating(true);
+    
+    try {
+      const response = await fetch('/api/check-brand', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          brand_name: brandName,
+          keywords: keywords.split('\n').filter(k => k.trim() !== ''),
+        }),
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `amazon_search_results_${brandName}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        toast({
+          title: "Report generated successfully",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        throw new Error('Failed to generate report');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "An error occurred",
+        description: "Failed to generate the report. Please try again.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <Flex
@@ -98,7 +128,7 @@ export default function BrandRankChecker() {
               <Button
                 type="submit"
                 isLoading={isGenerating}
-                loadingText="Analyzing..."
+                loadingText="Generating..."
                 w="100%"
                 colorScheme="blue"
                 fontWeight="bold"
@@ -110,12 +140,12 @@ export default function BrandRankChecker() {
                 _hover={{ transform: "scale(1.05)" }}
                 _focus={{ boxShadow: "outline" }}
               >
-                Analyze Brand Ranking
+                Generate Report
               </Button>
             </VStack>
           </form>
         </Box>
       </Box>
     </Flex>
-  )
+  );
 }
