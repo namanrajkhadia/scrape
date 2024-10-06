@@ -1,66 +1,14 @@
-'use client'; // Add this line to indicate it's a Client Component
+'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button, Input, Textarea, Flex, Box, Heading, Text, VStack } from '@chakra-ui/react';
 
-// Define the type for props
-interface BrandFormProps {
-  brandName: string;
-  setBrandName: (name: string) => void;
-  keywords: string;
-  setKeywords: (keywords: string) => void;
-  isGenerating: boolean;
-  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-}
+export default function BrandRankChecker() {
+  const [brandName, setBrandName] = useState('');
+  const [keywords, setKeywords] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
 
-const BrandForm: React.FC<BrandFormProps> = ({
-  brandName,
-  setBrandName,
-  keywords,
-  setKeywords,
-  isGenerating,
-  handleSubmit,
-}) => (
-  <form onSubmit={handleSubmit}>
-    <VStack spacing={4}>
-      <Box w="100%">
-        <Text mb={1}>Brand Name</Text>
-        <Input
-          value={brandName}
-          onChange={(e) => setBrandName(e.target.value)}
-          placeholder="Enter your brand name"
-          required
-        />
-      </Box>
-      <Box w="100%">
-        <Text mb={1}>Keywords (one per line):</Text>
-        <Textarea
-          value={keywords}
-          onChange={(e) => setKeywords(e.target.value)}
-          placeholder="Enter keywords, one per line"
-          required
-          rows={5}
-        />
-      </Box>
-      <Button
-        type="submit"
-        isLoading={isGenerating}
-        loadingText="Generating..."
-        colorScheme="blue"
-        w="100%"
-      >
-        Generate Report
-      </Button>
-    </VStack>
-  </form>
-);
-
-const BrandRankChecker: React.FC = () => {
-  const [brandName, setBrandName] = useState<string>('');
-  const [keywords, setKeywords] = useState<string>('');
-  const [isGenerating, setIsGenerating] = useState<boolean>(false);
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsGenerating(true);
 
@@ -103,17 +51,39 @@ const BrandRankChecker: React.FC = () => {
         <Heading as="h1" size="xl" textAlign="center" mb={6}>
           Check if Your Brand Ranks on 1st Page
         </Heading>
-        <BrandForm 
-          brandName={brandName}
-          setBrandName={setBrandName}
-          keywords={keywords}
-          setKeywords={setKeywords}
-          isGenerating={isGenerating}
-          handleSubmit={handleSubmit}
-        />
+        <form onSubmit={handleSubmit}>
+          <VStack spacing={4}>
+            <Box w="100%">
+              <Text mb={1}>Brand Name</Text>
+              <Input
+                value={brandName}
+                onChange={(e) => setBrandName(e.target.value)}
+                placeholder="Enter your brand name"
+                required
+              />
+            </Box>
+            <Box w="100%">
+              <Text mb={1}>Keywords (one per line):</Text>
+              <Textarea
+                value={keywords}
+                onChange={(e) => setKeywords(e.target.value)}
+                placeholder="Enter keywords, one per line"
+                required
+                rows={5}
+              />
+            </Box>
+            <Button
+              type="submit"
+              isLoading={isGenerating}
+              loadingText="Generating..."
+              colorScheme="blue"
+              w="100%"
+            >
+              Generate Report
+            </Button>
+          </VStack>
+        </form>
       </Box>
     </Flex>
   );
-};
-
-export default BrandRankChecker;
+}
