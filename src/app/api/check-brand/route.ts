@@ -57,7 +57,38 @@ async function checkBrandPresence(keyword: string, brand: string, marketplace = 
     }
 }
 
-// ... rest of the code remains the same
+async function createExcelFile(results: any[], brandName: string) {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Amazon Search Results');
+
+    worksheet.addRow(['Keyword', 'Ads', 'Organic']);
+
+    const greenFill: ExcelJS.Fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: '00FF00' }
+    };
+
+    const redFill: ExcelJS.Fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF0000' }
+    };
+
+    results.forEach((result) => {
+        const row = worksheet.addRow([
+            result.keyword,
+            result.sponsoredPresent ? 'Present' : 'Not Present',
+            result.organicPresent ? 'Present' : 'Not Present'
+        ]);
+
+        row.getCell(2).fill = result.sponsoredPresent ? greenFill : redFill;
+        row.getCell(3).fill = result.organicPresent ? greenFill : redFill;
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return buffer;
+}
 
 export async function POST(request: Request) {
     try {
