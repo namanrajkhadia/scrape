@@ -51,27 +51,27 @@ async function createExcelFile(results: any[], brandName: string) {
 
     worksheet.addRow(['Keyword', 'Ads', 'Organic']);
 
-    const greenFill = {
+    const greenFill: ExcelJS.Fill = {
         type: 'pattern',
         pattern: 'solid',
         fgColor: { argb: '00FF00' }
     };
 
-    const redFill = {
+    const redFill: ExcelJS.Fill = {
         type: 'pattern',
         pattern: 'solid',
         fgColor: { argb: 'FF0000' }
     };
 
-    results.forEach((result, index) => {
+    results.forEach((result) => {
         const row = worksheet.addRow([
             result.keyword,
             result.sponsoredPresent ? 'Present' : 'Not Present',
             result.organicPresent ? 'Present' : 'Not Present'
         ]);
 
-        row.getCell(2).fill = result.sponsoredPresent ? greenFill : redFill;
-        row.getCell(3).fill = result.organicPresent ? greenFill : redFill;
+        if (row.getCell(2).fill) row.getCell(2).fill = result.sponsoredPresent ? greenFill : redFill;
+        if (row.getCell(3).fill) row.getCell(3).fill = result.organicPresent ? greenFill : redFill;
     });
 
     const buffer = await workbook.xlsx.writeBuffer();
