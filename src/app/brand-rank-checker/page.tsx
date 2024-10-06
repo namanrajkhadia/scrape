@@ -4,11 +4,12 @@ import { useState } from 'react';
 import { Button, Input, Textarea, Flex, Box, Heading, Text, VStack } from '@chakra-ui/react';
 
 export default function BrandRankChecker() {
-  const [brandName, setBrandName] = useState('');
-  const [keywords, setKeywords] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
+  // Use specific type definitions for useState
+  const [brandName, setBrandName] = useState<string>('');
+  const [keywords, setKeywords] = useState<string>('');
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsGenerating(true);
 
