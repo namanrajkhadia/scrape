@@ -1,10 +1,6 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+module.exports = {
   reactStrictMode: true,
-  swcMinify: true,
   env: {
     FLASK_API_URL: process.env.FLASK_API_URL,
   },
 }
-
-module.exports = nextConfig
