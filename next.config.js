@@ -4,7 +4,10 @@ module.exports = {
       {
         source: '/api/:path*',
         destination: process.env.NEXT_PUBLIC_API_URL + '/api/:path*',
-      webpack: (config, { isServer }) => {
+      },
+    ];
+  },
+  webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -16,7 +19,3 @@ module.exports = {
     return config;
   },
 };
-      },
-    ]
-  },
-}
