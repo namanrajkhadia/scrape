@@ -29,7 +29,7 @@ async function checkBrandPresence(keyword: string, brand: string, marketplace = 
             const title = titleElement.textContent?.toLowerCase() || '';
             const isSponsored = result.querySelector('span:-webkit-any(span[data-component-type="s-sponsored-label-info-icon"], .puis-label-text)') !== null;
 
-            if (brand.toLowerCase() in title) {
+            if (title.includes(brand.toLowerCase())) {
                 if (isSponsored && sponsoredCount < 10) {
                     sponsoredPresent = true;
                     sponsoredCount++;
