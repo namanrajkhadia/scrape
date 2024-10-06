@@ -19,24 +19,28 @@ async function checkBrandPresence(keyword: string, brand: string, marketplace = 
 
         let sponsoredPresent = false;
         let organicPresent = false;
+        let sponsoredCount = 0;
 
-        allResults.forEach((result) => {
+        for (let i = 0; i < allResults.length; i++) {
+            const result = allResults[i];
             const titleElement = result.querySelector('span.a-text-normal');
-            if (!titleElement) return;
+            if (!titleElement) continue;
 
             const title = titleElement.textContent?.toLowerCase() || '';
-            const isSponsored = result.querySelector('span:not([data-component-type]):not([class]):not([id])') !== null;
+            const isSponsored = result.querySelector('span:-webkit-any(span[data-component-type="s-sponsored-label-info-icon"], .puis-label-text)') !== null;
 
-            if (title.includes(brand.toLowerCase())) {
-                if (isSponsored) {
+            if (brand.toLowerCase() in title) {
+                if (isSponsored && sponsoredCount < 10) {
                     sponsoredPresent = true;
-                } else {
+                    sponsoredCount++;
+                } else if (!isSponsored) {
                     organicPresent = true;
                 }
             }
 
-            if (sponsoredPresent && organicPresent) return;
-        });
+            if (sponsoredPresent && organicPresent) break;
+            if (!isSponsored && i >= 20) break; // Assuming 20 results per page
+        }
 
         return { sponsoredPresent, organicPresent };
     } catch (error) {
