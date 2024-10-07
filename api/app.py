@@ -18,7 +18,7 @@ CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 logging.basicConfig(level=logging.DEBUG)
 
 def check_brand_presence(keyword, brand, marketplace="in"):
-    url = f"https://www.amazon.in/s?k={keyword.replace(' ', '+')}&language=en_IN&currency=INR"
+    url = f"https://www.amazon.in/s?k={keyword.replace(' ', '+')}"
     user_agents = [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
@@ -28,7 +28,14 @@ def check_brand_presence(keyword, brand, marketplace="in"):
     headers = {
         "User-Agent": random.choice(user_agents),
         "Accept-Language": "en-IN,en-GB;q=0.9,en-US;q=0.8,en;q=0.7",
-        "Accept-Currency": "INR"
+        "Accept-Currency": "INR",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "TE": "Trailers",
+        "Pragma": "no-cache",
+        "Cache-Control": "no-cache",
     }
     
     session = requests.Session()
@@ -43,6 +50,11 @@ def check_brand_presence(keyword, brand, marketplace="in"):
         response = session.get(url, headers=headers, timeout=30)
         response.raise_for_status()
         logging.info("Response received successfully")
+        logging.info(f"Response URL: {response.url}")  # Log the final URL after any redirects
+        
+        if "amazon.in" not in response.url:
+            logging.error(f"Redirected to non-Indian Amazon site: {response.url}")
+            return None, None
         
         soup = BeautifulSoup(response.content, 'html.parser')
         all_results = soup.find_all('div', {'data-component-type': 's-search-result'})
