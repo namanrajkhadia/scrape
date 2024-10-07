@@ -40,20 +40,28 @@ def check_brand_presence(keyword, brand, marketplace="in"):
         
         sponsored_present = False
         organic_present = False
+        sponsored_count = 0
+        
         for result in all_results:
             title_element = result.find('span', {'class': 'a-text-normal'})
             if not title_element:
                 continue
             title = title_element.text
-            is_sponsored = result.find('span', string=re.compile('Sponsored', re.IGNORECASE)) is not None
+            is_sponsored = result.find('span', class_='a-color-secondary', string='Sponsored') is not None
+            
             logging.info(f"Checking title: {title}, Sponsored: {is_sponsored}")
-            if brand.lower() in title.lower():
-                if is_sponsored:
+            
+            if is_sponsored:
+                sponsored_count += 1
+                if brand.lower() in title.lower():
                     sponsored_present = True
                     logging.info("Sponsored presence detected")
-                else:
-                    organic_present = True
-                    logging.info("Organic presence detected")
+                if sponsored_count >= 10:
+                    break
+            elif brand.lower() in title.lower():
+                organic_present = True
+                logging.info("Organic presence detected")
+            
             if sponsored_present and organic_present:
                 break
         
