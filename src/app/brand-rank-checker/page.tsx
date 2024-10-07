@@ -13,7 +13,7 @@ export default function BrandRankChecker() {
     setIsGenerating(true);
 
     try {
-      const response = await fetch('/api/check-brand', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/check-brand`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
