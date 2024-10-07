@@ -1,4 +1,5 @@
 import os
+import logging
 from flask import Flask, request, send_file, jsonify
 import requests
 from bs4 import BeautifulSoup
@@ -9,7 +10,8 @@ from flask_cors import CORS
 import tempfile
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
+logging.basicConfig(level=logging.DEBUG)
 
 def check_brand_presence(keyword, brand, marketplace="in"):
     url = f"https://www.amazon.{marketplace}/s?k={keyword.replace(' ', '+')}"
@@ -38,7 +40,7 @@ def check_brand_presence(keyword, brand, marketplace="in"):
                 break
         return sponsored_present, organic_present
     except requests.RequestException as e:
-        print(f"Error fetching results: {e}")
+        logging.error(f"Error fetching results: {e}")
         return None, None
 
 def create_excel_file(results, brand_name):
@@ -76,22 +78,37 @@ def create_excel_file(results, brand_name):
 
 @app.route('/api/check-brand', methods=['POST'])
 def check_brand():
-    data = request.json
-    brand_name = data['brand_name']
-    keywords = data['keywords']
-    results = []
-    for keyword in keywords:
-        keyword = keyword.strip()
-        if keyword:
-            sponsored_present, organic_present = check_brand_presence(keyword, brand_name)
-            results.append({
-                'keyword': keyword,
-                'sponsored_present': sponsored_present,
-                'organic_present': organic_present
-            })
-    excel_file = create_excel_file(results, brand_name)
-    return send_file(excel_file, as_attachment=True, attachment_filename=f"amazon_search_results_{brand_name}.xlsx")
+    try:
+        data = request.json
+        if not data:
+            raise ValueError("No JSON data received")
+        
+        brand_name = data.get('brand_name')
+        keywords = data.get('keywords')
+        
+        if not brand_name or not keywords:
+            raise ValueError("Missing brand_name or keywords")
+
+        results = []
+        for keyword in keywords:
+            keyword = keyword.strip()
+            if keyword:
+                sponsored_present, organic_present = check_brand_presence(keyword, brand_name)
+                results.append({
+                    'keyword': keyword,
+                    'sponsored_present': sponsored_present,
+                    'organic_present': organic_present
+                })
+        
+        excel_file = create_excel_file(results, brand_name)
+        return send_file(excel_file, as_attachment=True, attachment_filename=f"amazon_search_results_{brand_name}.xlsx")
+    except Exception as e:
+        logging.error(f"An error occurred: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    try:
+        app.run(host='0.0.0.0', port=port)
+    except Exception as e:
+        logging.error(f"An error occurred while starting the server: {str(e)}")
