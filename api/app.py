@@ -18,13 +18,8 @@ logging.basicConfig(level=logging.DEBUG)
 
 def check_brand_presence(keyword, brand, marketplace="in"):
     url = f"https://www.amazon.{marketplace}/s?k={keyword.replace(' ', '+')}"
-    user_agents = [
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0"
-    ]
     headers = {
-        "User-Agent": random.choice(user_agents)
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     }
     
     session = requests.Session()
@@ -50,7 +45,7 @@ def check_brand_presence(keyword, brand, marketplace="in"):
             if not title_element:
                 continue
             title = title_element.text
-            is_sponsored = bool(result.select_one('span[data-component-type="s-sponsored-label-info-icon"], .puis-sponsored-label-text'))
+            is_sponsored = result.find('span', string=re.compile('Sponsored', re.IGNORECASE)) is not None
             logging.info(f"Checking title: {title}, Sponsored: {is_sponsored}")
             if brand.lower() in title.lower():
                 if is_sponsored:
