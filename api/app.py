@@ -1,6 +1,7 @@
 import os
 import logging
 import random
+import time
 from flask import Flask, request, send_file, jsonify
 import requests
 from requests.adapters import HTTPAdapter
@@ -17,20 +18,29 @@ CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
 logging.basicConfig(level=logging.DEBUG)
 
 def check_brand_presence(keyword, brand, marketplace="in"):
-    url = f"https://www.amazon.{marketplace}/s?k={keyword.replace(' ', '+')}"
+    url = f"https://www.amazon.in/s?k={keyword.replace(' ', '+')}&language=en_IN&currency=INR"
+    user_agents = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15"
+    ]
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        "User-Agent": random.choice(user_agents),
+        "Accept-Language": "en-IN,en-GB;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Accept-Currency": "INR"
     }
     
     session = requests.Session()
-    retry = Retry(total=3, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504])
+    retry = Retry(total=5, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504])
     adapter = HTTPAdapter(max_retries=retry)
     session.mount('http://', adapter)
     session.mount('https://', adapter)
     
     try:
         logging.info(f"Sending request to {url}")
-        response = session.get(url, headers=headers, timeout=10)
+        time.sleep(5)  # Wait for 5 seconds before each request
+        response = session.get(url, headers=headers, timeout=30)
         response.raise_for_status()
         logging.info("Response received successfully")
         
@@ -46,8 +56,13 @@ def check_brand_presence(keyword, brand, marketplace="in"):
             title_element = result.find('span', {'class': 'a-text-normal'})
             if not title_element:
                 continue
-            title = title_element.text
-            is_sponsored = result.find('span', class_='a-color-secondary', string='Sponsored') is not None
+            title = title_element.text.strip()
+            
+            # Modified sponsored detection logic
+            is_sponsored = (
+                result.find('span', {'class': 'a-size-small a-color-base', 'dir': 'auto'}) and 
+                result.find('span', text=re.compile('Sponsored'))
+            ) is not None
             
             logging.info(f"Checking title: {title}, Sponsored: {is_sponsored}")
             
