@@ -1,13 +1,9 @@
 import os
 import logging
-import random
-import time
-import re
 from flask import Flask, request, send_file, jsonify
 import requests
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
 from bs4 import BeautifulSoup
+import re
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill
 from flask_cors import CORS
@@ -19,38 +15,15 @@ logging.basicConfig(level=logging.DEBUG)
 
 def check_brand_presence(keyword, brand, marketplace="in"):
     url = f"https://www.amazon.in/s?k={keyword.replace(' ', '+')}"
-    user_agents = [
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15"
-    ]
     headers = {
-        "User-Agent": random.choice(user_agents),
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
         "Accept-Language": "en-IN,en-GB;q=0.9,en-US;q=0.8,en;q=0.7",
-        "Accept-Currency": "INR",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Connection": "keep-alive",
-        "Upgrade-Insecure-Requests": "1",
-        "TE": "Trailers",
-        "Pragma": "no-cache",
-        "Cache-Control": "no-cache",
+        "Accept-Currency": "INR"
     }
-    
-    session = requests.Session()
-    retry = Retry(total=5, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504])
-    adapter = HTTPAdapter(max_retries=retry)
-    session.mount('http://', adapter)
-    session.mount('https://', adapter)
-    
     try:
-        logging.info(f"Sending request to {url}")
-        time.sleep(5)  # Wait for 5 seconds before each request
-        response = session.get(url, headers=headers, timeout=30)
+        response = requests.get(url, headers=headers)
         response.raise_for_status()
-        logging.info("Response received successfully")
-        logging.info(f"Response URL: {response.url}")  # Log the final URL after any redirects
+        logging.info(f"Response URL: {response.url}")
         
         if "amazon.in" not in response.url:
             logging.error(f"Redirected to non-Indian Amazon site: {response.url}")
@@ -58,48 +31,25 @@ def check_brand_presence(keyword, brand, marketplace="in"):
         
         soup = BeautifulSoup(response.content, 'html.parser')
         all_results = soup.find_all('div', {'data-component-type': 's-search-result'})
-        logging.info(f"Found {len(all_results)} search results")
-        
         sponsored_present = False
         organic_present = False
-        sponsored_count = 0
-        
         for result in all_results:
             title_element = result.find('span', {'class': 'a-text-normal'})
             if not title_element:
                 continue
             title = title_element.text
-            
-            # Multiple checks for sponsored content
-            is_sponsored = (
-                result.find('span', class_='a-color-secondary', string='Sponsored') is not None or
-                result.find('span', {'data-component-type': 's-sponsored-label-info-icon'}) is not None or
-                'sponsored' in result.get('class', []) or
-                result.find('span', string=re.compile('sponsored', re.IGNORECASE)) is not None
-            )
-            
-            logging.info(f"Checking title: {title}")
-            logging.info(f"Is sponsored: {is_sponsored}")
-            logging.info(f"HTML snippet: {result.prettify()[:500]}...")  # Log a snippet of the HTML for debugging
-            
-            if is_sponsored:
-                sponsored_count += 1
-                if brand.lower() in title.lower():
+            is_sponsored = result.find('span', class_='a-color-secondary', string='Sponsored') is not None
+            logging.info(f"Checking title: {title}, Sponsored: {is_sponsored}")
+            if brand.lower() in title.lower():
+                if is_sponsored:
                     sponsored_present = True
-                    logging.info("Sponsored presence detected")
-                if sponsored_count >= 10:
-                    break
-            elif brand.lower() in title.lower():
-                organic_present = True
-                logging.info("Organic presence detected")
-            
+                else:
+                    organic_present = True
             if sponsored_present and organic_present:
                 break
-        
-        logging.info(f"Final result - Sponsored: {sponsored_present}, Organic: {organic_present}")
         return sponsored_present, organic_present
     except requests.RequestException as e:
-        logging.error(f"Error fetching results: {e}", exc_info=True)
+        logging.error(f"Error fetching results: {e}")
         return None, None
 
 def create_excel_file(results, brand_name):
