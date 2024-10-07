@@ -1,7 +1,10 @@
 import os
 import logging
+import random
 from flask import Flask, request, send_file, jsonify
 import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 from bs4 import BeautifulSoup
 import re
 from openpyxl import Workbook
@@ -15,12 +18,24 @@ logging.basicConfig(level=logging.DEBUG)
 
 def check_brand_presence(keyword, brand, marketplace="in"):
     url = f"https://www.amazon.{marketplace}/s?k={keyword.replace(' ', '+')}"
+    user_agents = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0"
+    ]
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        "User-Agent": random.choice(user_agents)
     }
+    
+    session = requests.Session()
+    retry = Retry(total=3, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504])
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+    
     try:
         logging.info(f"Sending request to {url}")
-        response = requests.get(url, headers=headers)
+        response = session.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         logging.info("Response received successfully")
         
@@ -35,7 +50,7 @@ def check_brand_presence(keyword, brand, marketplace="in"):
             if not title_element:
                 continue
             title = title_element.text
-            is_sponsored = result.find('span', string=re.compile('Sponsored', re.IGNORECASE)) is not None
+            is_sponsored = bool(result.select_one('span[data-component-type="s-sponsored-label-info-icon"], .puis-sponsored-label-text'))
             logging.info(f"Checking title: {title}, Sponsored: {is_sponsored}")
             if brand.lower() in title.lower():
                 if is_sponsored:
@@ -124,7 +139,7 @@ def check_brand():
         excel_file = create_excel_file(results, brand_name)
         logging.info("Excel file created successfully")
         
-        return send_file(excel_file, as_attachment=True, attachment_filename=f"amazon_search_results_{brand_name}.xlsx")
+        return send_file(excel_file, as_attachment=True, download_name=f"amazon_search_results_{brand_name}.xlsx")
     except Exception as e:
         logging.error(f"An error occurred: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 500
