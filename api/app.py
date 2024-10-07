@@ -2,12 +2,12 @@ import os
 import logging
 import random
 import time
+import re
 from flask import Flask, request, send_file, jsonify
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 from bs4 import BeautifulSoup
-import re
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill
 from flask_cors import CORS
@@ -56,15 +56,19 @@ def check_brand_presence(keyword, brand, marketplace="in"):
             title_element = result.find('span', {'class': 'a-text-normal'})
             if not title_element:
                 continue
-            title = title_element.text.strip()
+            title = title_element.text
             
-            # Modified sponsored detection logic
+            # Multiple checks for sponsored content
             is_sponsored = (
-                result.find('span', {'class': 'a-size-small a-color-base', 'dir': 'auto'}) and 
-                result.find('span', text=re.compile('Sponsored'))
-            ) is not None
+                result.find('span', class_='a-color-secondary', string='Sponsored') is not None or
+                result.find('span', {'data-component-type': 's-sponsored-label-info-icon'}) is not None or
+                'sponsored' in result.get('class', []) or
+                result.find('span', string=re.compile('sponsored', re.IGNORECASE)) is not None
+            )
             
-            logging.info(f"Checking title: {title}, Sponsored: {is_sponsored}")
+            logging.info(f"Checking title: {title}")
+            logging.info(f"Is sponsored: {is_sponsored}")
+            logging.info(f"HTML snippet: {result.prettify()[:500]}...")  # Log a snippet of the HTML for debugging
             
             if is_sponsored:
                 sponsored_count += 1
